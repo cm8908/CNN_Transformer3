@@ -152,8 +152,8 @@ class AutoRegressiveDecoderLayer(nn.Module):
             self.K_sa = torch.cat([self.K_sa, k_sa], dim=1)
             self.V_sa = torch.cat([self.V_sa, v_sa], dim=1)
         if self.segm_len is not None:
-            self.K_sa = self.K_sa[:, -self.segm_len, :]
-            self.V_sa = self.V_sa[:, -self.segm_len, :]
+            self.K_sa = self.K_sa[:, -self.segm_len:, :]
+            self.V_sa = self.V_sa[:, -self.segm_len:, :]
         # compute self-attention between nodes in the partial tour
         h_t = h_t + self.W0_selfatt( myMHA(q_sa, self.K_sa, self.V_sa, self.nb_heads)[0] ) # size(h_t)=(bsz, 1, dim_emb)
         h_t = self.BN_selfatt(h_t.squeeze()) # size(h_t)=(bsz, dim_emb)
@@ -242,7 +242,7 @@ class TSP_net(nn.Module):
       sumLogProbOfActions of size (bsz,) : batch of sum_t log prob( pi_t | pi_(t-1),...,pi_0 )
     """
     
-    def __init__(self, embedding, nb_neighbors, kernel_size, knn_sorter, dim_input_nodes, dim_emb, dim_ff, nb_layers_encoder, nb_layers_decoder, nb_heads, max_len_PE,
+    def __init__(self, embedding, nb_neighbors, kernel_size, dim_input_nodes, dim_emb, dim_ff, nb_layers_encoder, nb_layers_decoder, nb_heads, max_len_PE,
                  segm_len=None, batchnorm=True):
         super(TSP_net, self).__init__()
         
@@ -253,7 +253,7 @@ class TSP_net(nn.Module):
         if embedding == 'linear':
             self.input_emb = nn.Linear(dim_input_nodes, dim_emb)
         elif embedding == 'conv':
-            self.input_emb = ConvEmbedding(nb_neighbors, kernel_size, dim_emb, dim_input_nodes, knn_sorter)
+            self.input_emb = ConvEmbedding(nb_neighbors, kernel_size, dim_emb, dim_input_nodes)
         elif embedding == 'conv_same_padding':
             self.input_emb = ConvSamePadding(dim_input_nodes, dim_emb, kernel_size)
         elif embedding == 'conv_linear':

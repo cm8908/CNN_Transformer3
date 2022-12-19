@@ -180,8 +180,8 @@ class AutoRegressiveDecoderLayer(nn.Module):
             self.K_sa = torch.cat([self.K_sa, k_sa], dim=1)
             self.V_sa = torch.cat([self.V_sa, v_sa], dim=1)
         if self.segm_len is not None:
-            self.K_sa = self.K_sa[:, -segm_len, :]
-            self.V_sa = self.V_sa[:, -segm_len, :]
+            self.K_sa = self.K_sa[:, -self.segm_len:, :]
+            self.V_sa = self.V_sa[:, -self.segm_len:, :]
         # compute self-attention between nodes in the partial tour
         h_t = h_t + self.W0_selfatt( myMHA(q_sa, self.K_sa, self.V_sa, self.nb_heads)[0] ) # size(h_t)=(bsz, 1, dim_emb)
         h_t = self.BN_selfatt(h_t.squeeze()) # size(h_t)=(bsz, dim_emb)
