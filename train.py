@@ -13,7 +13,7 @@ from argparse import ArgumentParser
 import os
 import datetime
 
-# from model import TSP_net
+from model import TSP_net
 from utils import compute_tour_length
 
 # visualization 
@@ -79,6 +79,8 @@ if not args.debug:
     if not os.path.exists('./logs'):
         os.makedirs('./logs')
     writer = SummaryWriter('./logs/'+args.exp_name)
+else:
+    print("########### RUNNING ON DEBUG MODE ############")
 
 
 ###################
