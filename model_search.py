@@ -280,7 +280,7 @@ class TSP_net(nn.Module):
       sumLogProbOfActions of size (bsz,) : batch of sum_t log prob( pi_t | pi_(t-1),...,pi_0 )
     """
     
-    def __init__(self, embedding, nb_neighbors, kernel_size, knn_sorter, dim_input_nodes, dim_emb, dim_ff, nb_layers_encoder, nb_layers_decoder, nb_heads, max_len_PE,
+    def __init__(self, embedding, nb_neighbors, kernel_size, dim_input_nodes, dim_emb, dim_ff, nb_layers_encoder, nb_layers_decoder, nb_heads, max_len_PE,
                  segm_len=None, batchnorm=True):
         super(TSP_net, self).__init__()
         
@@ -291,7 +291,7 @@ class TSP_net(nn.Module):
         if embedding == 'linear':
             self.input_emb = nn.Linear(dim_input_nodes, dim_emb)
         elif embedding == 'conv':
-            self.input_emb = ConvEmbedding(nb_neighbors, kernel_size, dim_emb, dim_input_nodes, knn_sorter)
+            self.input_emb = ConvEmbedding(nb_neighbors, kernel_size, dim_emb, dim_input_nodes)
         elif embedding == 'conv_same_padding':
             self.input_emb = ConvSamePadding(dim_input_nodes, dim_emb, kernel_size)
         elif embedding == 'conv_linear':
