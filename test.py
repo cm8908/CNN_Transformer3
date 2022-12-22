@@ -10,7 +10,7 @@ import argparse
 import os
 import datetime
 
-# from model_search import TSP_net
+from model_search import TSP_net
 from utils import AverageMeter, compute_tour_length, csv_write
 # visualization 
 from IPython.display import set_matplotlib_formats, clear_output
@@ -32,21 +32,20 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # Hyper-parameters
 ###################
 
-sorters = [None, 'by_x', 'by_y', 'sum_xy', 'dist_from_center', 'by_x_desc', 'by_y_desc', 'random']
 parser = argparse.ArgumentParser()
 parser.add_argument('-n', '--nb_nodes', type=int, choices=[20, 50, 100], default=20)#required=True)
-parser.add_argument('--version', choices=['second', 'fourth', 'fifth'], required=True)
 parser.add_argument('--embedding', type=str, choices=['linear', 'conv_same_padding', 'conv', 'conv2'], required=True)
 parser.add_argument('--nb_neighbors', type=int, default=None)
 parser.add_argument('--kernel_size', type=int, default=None)
-parser.add_argument('--knn_sorter', type=str, choices=sorters, default=None)
 parser.add_argument('--gpu_id', type=str, required=True)
 parser.add_argument('--ckpt_file', type=str, required=True)
 parser.add_argument('--exp_tag', type=str, required=True)
-parser.add_argument('--clip_every', action='store_true', default=False)  # Clip every decoder layer or only last layer?
-parser.add_argument('--clip_value', type=int, default=10) 
-parser.add_argument('--mean_token', action='store_true', default=False)  # Mean or Add?
 parser.add_argument('--segm_len', type=int, default=None)
+
+parser.add_argument('--beam_width', type=int, default=2500)
+parser.add_argument('--greedy', action='store_true', default=False)
+parser.add_argument('--beamsearch', action='store_true', default=False)
+
 parser.add_argument('--batchnorm', action='store_true', default=False)
 parser.add_argument('--nb_layers_decoder', type=int, default=2)
 args = parser.parse_args()
@@ -61,12 +60,6 @@ args.nb_heads = 8
 args.max_len_PE = 1000
 print(args)
 
-if args.version == 'second':
-    from models.model_search_second import TSP_net
-elif args.version == 'fourth':
-    from models.model_search_fourth import TSP_net
-elif args.version == 'fifth':
-    from models.model_search_fifth import TSP_net
 ###################
 # Hardware : CPU / GPU(s)
 ###################
@@ -95,7 +88,7 @@ print(device)
 
 # # Instantiate, Load Model
 
-os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+# os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 ###################
 # Instantiate a training network and a baseline network
 ###################
@@ -106,8 +99,8 @@ except:
 
 model_baseline = TSP_net(args.embedding, args.nb_neighbors, args.kernel_size, 
                       args.dim_input_nodes, args.dim_emb, args.dim_ff, args.nb_layers_encoder, args.nb_layers_decoder, 
-                      args.nb_heads, args.clip_every, args.clip_value, args.max_len_PE, args.segm_len,
-                      args.mean_token, batchnorm=args.batchnorm)
+                      args.nb_heads, args.max_len_PE, args.segm_len,
+                      batchnorm=args.batchnorm)
 
 # uncomment these lines if trained with multiple GPUs
 print(torch.cuda.device_count())
@@ -143,7 +136,7 @@ print(mystring_min)
 ###################   
 # Hyper-parameter for beam search
 ###################
-B = 2500; greedy = True; beamsearch = True 
+B = args.beam_width; greedy = args.greedy; beamsearch = args.beamsearch 
 
 
 # # Prepare Data and Run Beamsearch
@@ -157,21 +150,21 @@ if args.nb_nodes == 20:
     L_concorde = x_10k_len.mean().item()
     args.bsz = 100
     args.nb_batch_eval = 10_000 // args.bsz
-    B = 420
+    # B = 420
 if args.nb_nodes == 50:
     x_10k = torch.load('data/10k_TSP50.pt').to(device)
     x_10k_len = torch.load('data/10k_TSP50_len.pt').to(device)
     L_concorde = x_10k_len.mean().item()
     args.bsz = 10
     args.nb_batch_eval = 10_000 // args.bsz
-    B = 2500
+    # B = 2500
 if args.nb_nodes == 100:
     x_10k = torch.load('data/10k_TSP100.pt').to(device)
     x_10k_len = torch.load('data/10k_TSP100_len.pt').to(device)
     L_concorde = x_10k_len.mean().item()
     args.bsz = 5
     args.nb_batch_eval = 10_000 // args.bsz
-    B = 2500
+    # B = 2500
 if args.nb_nodes == 200:
     raise NotImplementedError()
     x_10k = torch.load('data/10k_TSP200.pt').to(device)
@@ -179,13 +172,15 @@ if args.nb_nodes == 200:
     L_concorde = x_10k_len.mean().item()
     args.bsz = 100
     args.nb_batch_eval = 1_000 // args.bsz
-    B = 2500
+    # B = 2500
 assert 10_000 % args.bsz == 0
 nb_TSPs = args.nb_batch_eval* args.bsz
 
 
 file_name = f"test_res/{args.exp_tag}.txt"
 file = open(file_name,"a",1) 
+file.write('\n'.join([f'{k}:{v}' for k, v in vars(args).items()])+'\n\n')
+file.write(mystring_min+'\n')
 
 ###################   
 # Run beam search
@@ -241,8 +236,8 @@ tot_time = time.time()-start
 # Write result file
 ###################
 nb_TSPs = args.nb_batch_eval* args.bsz
-file_name = f"test_res/{args.exp_tag}.txt"
-file = open(file_name,"a",1) 
+# file_name = f"test_res/{args.exp_tag}.txt"
+# file = open(file_name,"a",1) 
 mystring = '\Tag:{}, Embedding:{} --- nb_nodes: {:d}, nb_TSPs: {:d}, B: {:d}, L_greedy: {:.6f}, L_concorde: {:.5f}, L_beamsearch: {:.5f}, \
 gap_greedy(%): {:.5f}, gap_beamsearch(%): {:.5f}, scores_greedy: {:.5f}, scores_beamsearch: {:.5f}, tot_time: {:.4f}min, \
 tot_time: {:.3f}hr, mean_time: {:.3f}sec'.format(args.exp_tag, args.embedding, args.nb_nodes, nb_TSPs, B, mean_tour_length_greedy.avg, L_concorde, \
