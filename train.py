@@ -187,8 +187,9 @@ tot_time_ckpt = 0
 
 
 # Uncomment these lines to re-start training with saved checkpoint
+checkpoint_dir = 'checkpoint'
 if args.resume_training:
-    checkpoint_file = args.resume_file
+    checkpoint_file = os.path.join(checkpoint_dir, args.resume_file)
     checkpoint = torch.load(checkpoint_file, map_location=device)
     epoch_ckpt = checkpoint['epoch'] + 1
     tot_time_ckpt = checkpoint['tot_time']
@@ -304,7 +305,6 @@ for epoch in range(0,args.nb_epochs):
 
     
         # Saving checkpoint
-        checkpoint_dir = os.path.join("checkpoint")
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
         filename = f'{checkpoint_dir}/{args.exp_name}.pkl'
