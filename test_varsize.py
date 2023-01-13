@@ -29,7 +29,6 @@ parser.add_argument('-m', '--segm_len', type=int, choices=[5, 10, 20, 50, 100], 
 parser.add_argument('--embedding', type=str, choices=['conv', 'conv_same_padding', 'linear'])
 parser.add_argument('--gpu_id', type=str, required=True)
 
-parser.add_argument('--beam_width', type=int, default=2500)
 parser.add_argument('--greedy', action='store_true', default=False)
 parser.add_argument('--beamsearch', action='store_true', default=False)
 args = parser.parse_args()
@@ -135,7 +134,7 @@ print(mystring_min)
 ###################
 
 
-B = args.beam_width; greedy = args.greedy; beamsearch = args.beamsearch 
+greedy = args.greedy; beamsearch = args.beamsearch 
 if greedy and not beamsearch:
     B = 1
 
@@ -206,7 +205,7 @@ for test_size in [20, 50, 100]:
                 # L_greedy = compute_distance(x_org, tours_greedy, metric)
                 mean_tour_length_greedy.update(L_greedy.mean().item())
                 x_len_greedy = L_greedy
-                gap_greedy.update((x_len_greedy/ x_len_concorde - 1.0).sum().item())
+                gap_greedy.update((x_len_greedy/ x_len_concorde - 1.0).mean().item())
             # beamsearch
             if beamsearch:
                 tours_beamsearch = tours_beamsearch.view(args.bsz*B, test_size)
@@ -219,7 +218,7 @@ for test_size in [20, 50, 100]:
                 L_beamsearch, idx_min = L_beamsearch.min(dim=1)
                 mean_tour_length_beamsearch.update(L_beamsearch.mean().item())
                 x_len_beamsearch = L_beamsearch
-                gap_beamsearch.update((x_len_beamsearch/ x_len_concorde - 1.0).sum().item())
+                gap_beamsearch.update((x_len_beamsearch/ x_len_concorde - 1.0).mean().item())
         torch.cuda.empty_cache() # free GPU reserved memory 
     tot_time = time.time()-start
     
