@@ -35,7 +35,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 ###################
 # Hyper-parameters
 ###################
-embedding_choices = ['linear', 'conv_same_padding', 'conv']  # conv_XY, conv_same_padding, conv_linear
+embedding_choices = ['linear', 'conv_same_padding', 'conv', 'conv_linear']  # conv_XY, conv_same_padding, conv_linear
 parser = ArgumentParser()
 parser.add_argument('--debug', action='store_true', default=False)
 parser.add_argument('--exp_name', type=str, required=True)
