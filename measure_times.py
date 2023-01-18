@@ -5,6 +5,7 @@ import time
 import pandas as pd
 from tqdm import tqdm
 from argparse import ArgumentParser
+from utils import compute_tour_length
 
 def get_model(args, is_train=False):
     if is_train:
@@ -38,14 +39,24 @@ def main(args):
 
     # Get Train Model and Measure T-Time
     model = get_model(args, is_train=True).to(device)
+    model_baseline = get_model(args, is_train=True).to(device)
+    oz = torch.optim.Adam(model.parameters(), lr=1e-4)
     t_time_s = time.time()
     if args.train_bsz is None:
+        raise NotImplementedError()
         model(data_10k, deterministic=False)
     else:
         assert 10_000 % args.train_bsz == 0
         for i in tqdm(range(0, 10_000, args.train_bsz)):
             minibatch = data_10k[i:i+args.train_bsz]
-            model(minibatch, deterministic=False)
+            tour, slp = model(minibatch, deterministic=False)
+            with torch.no_grad():
+                tour_b, _ = model_baseline(minibatch, deterministic=False)
+            L_train, L_baseline = compute_tour_length(minibatch, tour), compute_tour_length(minibatch, tour_b)
+            loss = ((L_train - L_baseline) * slp).mean()
+            oz.zero_grad()
+            loss.backward()
+            oz.step()
     t_time = time.time() - t_time_s
     result_dict['T-Time (total)'] = t_time
     print('T-Time (total):', t_time)
@@ -69,13 +80,15 @@ def main(args):
     with torch.no_grad():
         if args.greedy_bsz is not None:
             i_time_s = time.time()
-            for i in tqdm(range(0, args.nb_instances_eval, args.greedy_bsz)):
+            # for i in tqdm(range(0, args.nb_instances_eval, args.greedy_bsz)):
+            for i in tqdm(range(0, 10_000, args.greedy_bsz)):
                 minibatch = data_10k[i:i+args.greedy_bsz]
                 model_infer(minibatch, greedy=True, beamsearch=False, B=1)
             i_time_g = time.time() - i_time_s
             result_dict['I-Time Greedy (total)'] = i_time_g
             print('I-Time Greedy (total):', i_time_g)
-            i_time_g /= args.nb_instances_eval
+            # i_time_g /= args.nb_instances_eval
+            i_time_g /= 10_000 if args.train_bsz is not None else t_time
             result_dict['I-Time Greedy (per instance)'] = i_time_g
             print('I-Time Greedy (per instance):', i_time_g)
             torch.cuda.empty_cache()
