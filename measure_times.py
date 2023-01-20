@@ -88,7 +88,7 @@ def main(args):
             result_dict['I-Time Greedy (total)'] = i_time_g
             print('I-Time Greedy (total):', i_time_g)
             # i_time_g /= args.nb_instances_eval
-            i_time_g /= 10_000 if args.train_bsz is not None else t_time
+            i_time_g /= 10_000
             result_dict['I-Time Greedy (per instance)'] = i_time_g
             print('I-Time Greedy (per instance):', i_time_g)
             torch.cuda.empty_cache()
