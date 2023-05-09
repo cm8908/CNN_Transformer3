@@ -17,7 +17,7 @@ $ sh test_sh/test-sh-filename.sh
 ```
 You can use `test_tsplib.ipynb` to test the trained model on the TSPLIB dataset
 
-
+The pretrained model checkpoints are uploaded in the `checkpoint` directory
 # Requirements
 - pytorch 1.12.1
 - numpy 1.22.3
