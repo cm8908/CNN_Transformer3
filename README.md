@@ -10,7 +10,7 @@ To test the trained model on TSP20 random dataset, run the following:
 ```console
 $ test.py -n 20 --embedding conv --nb_neighbors 10 --kernel_size 11 --gpu_id 0 --ckpt_file Experiment-Name-on-Train.pkl --exp_tag Result-File-Name --segm_len 5 --greedy --beamsearch --batchnorm
 ```
-OR you can just run shell scripts for train and test respectively. You may modify the .sh files uploaded on this repository if necessary.
+OR you can instead run shell scripts for train and test respectively. You may modify the .sh files uploaded on this repository if necessary.
 ```console
 $ sh train_sh/train-sh-filename.sh
 $ sh test_sh/test-sh-filename.sh
