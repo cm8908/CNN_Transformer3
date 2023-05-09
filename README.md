@@ -15,6 +15,8 @@ OR you can just run shell scripts for train and test respectively. You may modif
 $ sh train_sh/train-sh-filename.sh
 $ sh test_sh/test-sh-filename.sh
 ```
+You can use `test_tsplib.ipynb` to test the trained model on the TSPLIB dataset
+
 
 # Requirements
 - pytorch 1.12.1
