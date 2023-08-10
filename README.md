@@ -1,4 +1,4 @@
-![image](https://github.com/cm8908/CNN_Transformer3/assets/9781689/4401942e-f1f6-413b-8cfa-ead189fc24d0)# CNN_Transformer
+# CNN_Transformer
 Code for paper: [A Lightweight CNN-Transformer Model for Learning Traveling Salesman Problems](https://arxiv.org/abs/2305.01883)
 
 # Runs (Examples)
