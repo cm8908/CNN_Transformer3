@@ -1,4 +1,4 @@
-# CNN_Transformer
+![image](https://github.com/cm8908/CNN_Transformer3/assets/9781689/4401942e-f1f6-413b-8cfa-ead189fc24d0)# CNN_Transformer
 Code for paper: [A Lightweight CNN-Transformer Model for Learning Traveling Salesman Problems](https://arxiv.org/abs/2305.01883)
 
 # Runs (Examples)
@@ -27,3 +27,16 @@ The pretrained model checkpoints are uploaded in the `checkpoint` directory
 
 # Acknowledgement
 The codes here are based on the work of Xavier Bresson's [TSP Transformer](https://github.com/xbresson/TSP_Transformer)
+
+# Cite
+
+```
+@misc{jung2023lightweight,
+      title={A Lightweight CNN-Transformer Model for Learning Traveling Salesman Problems}, 
+      author={Minseop Jung and Jaeseung Lee and Jibum Kim},
+      year={2023},
+      eprint={2305.01883},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
