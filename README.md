@@ -31,9 +31,9 @@ The codes here are based on the work of Xavier Bresson's [TSP Transformer](https
 # Cite
 
 ```
-@misc{jung2023lightweight,
-      title={A Lightweight CNN-Transformer Model for Learning Traveling Salesman Problems}, 
-      author={Minseop Jung and Jaeseung Lee and Jibum Kim},
+@article{jung2023lightweight,
+  title={A Lightweight CNN-Transformer Model for Learning Traveling Salesman Problems},
+  author={Jung, Minseop and Lee, Jaeseung and Kim, Jibum},
       year={2023},
       eprint={2305.01883},
       archivePrefix={arXiv},
