@@ -40,7 +40,7 @@ parser = ArgumentParser()
 parser.add_argument('--debug', action='store_true', default=False)
 parser.add_argument('--exp_name', type=str, required=True)
 parser.add_argument('--exp_detail', type=str, default='')
-parser.add_argument('-n', '--nb_nodes', type=int, choices=[20, 50, 100], required=True)
+parser.add_argument('-n', '--nb_nodes', type=int, choices=[20, 50, 100, 150, 200], required=True)
 parser.add_argument('--bsz', type=int, required=True)
 parser.add_argument('--gpu_id', type=str, required=True)
 
