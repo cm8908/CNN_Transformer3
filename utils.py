@@ -24,13 +24,12 @@ def compute_tour_length(x, tour):
     """
     bsz = x.shape[0]
     nb_nodes = x.shape[1]
-    arange_vec = torch.arange(bsz, device=x.device)
-    first_cities = x[arange_vec, tour[:,0], :] # size(first_cities)=(bsz,2)
+    first_cities = x[range(bsz), tour[:,0], :] # size(first_cities)=(bsz,2)
     previous_cities = first_cities
     L = torch.zeros(bsz, device=x.device)
     with torch.no_grad():
         for i in range(1,nb_nodes):
-            current_cities = x[arange_vec, tour[:,i], :] 
+            current_cities = x[range(bsz), tour[:,i]] 
             L += (current_cities - previous_cities).pow(2).sum(dim=1).sqrt()
             # L += torch.sum( torch.round((current_cities - previous_cities)**2) , dim=1 )**0.5 # dist(current, previous node) 
             previous_cities = current_cities
