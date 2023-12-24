@@ -66,6 +66,8 @@ parser.add_argument('--nb_batch_eval', type=int, default=20)
 parser.add_argument('--lr', type=int, default=1e-4)
 parser.add_argument('--tol', type=int, default=1e-3)
 parser.add_argument('--max_len_PE', type=int, default=1000)
+
+parser.add_argument('--fp16', action='store_true', default=False)
 args = parser.parse_args()
 if args.embedding == 'conv':
     assert not args.nb_neighbors is None
@@ -127,7 +129,7 @@ if checkpoint is not None:
     n = x_1000tsp.size(1)
     print('nb of nodes :',n)
 else:
-    x_1000tsp = torch.rand(1000, args.nb_nodes, args.dim_input_nodes, device='cpu')
+    x_1000tsp = torch.rand(1000, args.nb_nodes, args.dim_input_nodes, device=device)
     n = x_1000tsp.size(1)
     print('nb of nodes :',n)
 
@@ -156,6 +158,8 @@ if torch.cuda.device_count()>1:
     model_baseline = nn.DataParallel(model_baseline)
 # uncomment these lines if trained with multiple GPUs
 
+if args.fp16:
+    scaler = torch.amp.GradScaler()
 optimizer = torch.optim.Adam( model_train.parameters() , lr = args.lr ) 
 
 model_train = model_train.to(device)
@@ -226,21 +230,27 @@ for epoch in range(0,args.nb_epochs):
         x = torch.rand(args.bsz, args.nb_nodes, args.dim_input_nodes, device=device) # size(x)=(bsz, nb_nodes, dim_input_nodes) 
             
         # compute tours for model
-        tour_train, sumLogProbOfActions = model_train(x, deterministic=False) # size(tour_train)=(bsz, nb_nodes), size(sumLogProbOfActions)=(bsz)
+        with torch.autocast(device_type=device.type, enabled=args.fp16):
+            tour_train, sumLogProbOfActions = model_train(x, deterministic=False) # size(tour_train)=(bsz, nb_nodes), size(sumLogProbOfActions)=(bsz)
       
-        # compute tours for baseline
-        with torch.no_grad():
-            tour_baseline, _ = model_baseline(x, deterministic=True)
+            # compute tours for baseline
+            with torch.no_grad():
+                tour_baseline, _ = model_baseline(x, deterministic=True)
 
-        # get the lengths of the tours
-        L_train = compute_tour_length(x, tour_train) # size(L_train)=(bsz)
-        L_baseline = compute_tour_length(x, tour_baseline) # size(L_baseline)=(bsz)
+            # get the lengths of the tours
+            L_train = compute_tour_length(x, tour_train) # size(L_train)=(bsz)
+            L_baseline = compute_tour_length(x, tour_baseline) # size(L_baseline)=(bsz)
         
-        # backprop
-        loss = torch.mean( (L_train - L_baseline)* sumLogProbOfActions )
+            # backprop
+            loss = torch.mean( (L_train - L_baseline)* sumLogProbOfActions )
         optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        if args.fp16:
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            optimizer.step()
         
     time_one_epoch = time.time()-start
     time_tot = time.time()-start_training_time + tot_time_ckpt
@@ -257,18 +267,19 @@ for epoch in range(0,args.nb_epochs):
         # generate a batch of random tsp instances   
         x = torch.rand(args.bsz, args.nb_nodes, args.dim_input_nodes, device=device)
 
-        # compute tour for model and baseline
-        with torch.no_grad():
-            tour_train, _ = model_train(x, deterministic=True)
-            tour_baseline, _ = model_baseline(x, deterministic=True)
+        with torch.amp.autocast(device_type=device.type, enabled=args.fp16):
+            # compute tour for model and baseline
+            with torch.no_grad():
+                tour_train, _ = model_train(x, deterministic=True)
+                tour_baseline, _ = model_baseline(x, deterministic=True)
             
-        # get the lengths of the tours
-        L_train = compute_tour_length(x, tour_train)
-        L_baseline = compute_tour_length(x, tour_baseline)
+            # get the lengths of the tours
+            L_train = compute_tour_length(x, tour_train)
+            L_baseline = compute_tour_length(x, tour_baseline)
 
-        # L_tr and L_bl are tensors of shape (bsz,). Compute the mean tour length
-        mean_tour_length_train += L_train.mean().item()
-        mean_tour_length_baseline += L_baseline.mean().item()
+            # L_tr and L_bl are tensors of shape (bsz,). Compute the mean tour length
+            mean_tour_length_train += L_train.mean().item()
+            mean_tour_length_baseline += L_baseline.mean().item()
 
     mean_tour_length_train =  mean_tour_length_train/ args.nb_batch_eval
     mean_tour_length_baseline =  mean_tour_length_baseline/ args.nb_batch_eval
@@ -280,9 +291,10 @@ for epoch in range(0,args.nb_epochs):
 
     # Compute TSPs for small test set
     # Note : this can be removed
-    with torch.no_grad():
-        tour_baseline, _ = model_baseline(x_1000tsp, deterministic=True)
-    mean_tour_length_test = compute_tour_length(x_1000tsp, tour_baseline).mean().item()
+    with torch.amp.autocast(device_type=device.type, enabled=args.fp16):
+        with torch.no_grad():
+            tour_baseline, _ = model_baseline(x_1000tsp, deterministic=True)
+        mean_tour_length_test = compute_tour_length(x_1000tsp, tour_baseline).mean().item()
     
     # For checkpoint
     plot_performance_train.append([ (epoch+1), mean_tour_length_train])
