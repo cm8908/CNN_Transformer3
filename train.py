@@ -232,7 +232,7 @@ for epoch in range(0,args.nb_epochs):
         x = torch.rand(args.bsz, args.nb_nodes, args.dim_input_nodes, device=device) # size(x)=(bsz, nb_nodes, dim_input_nodes) 
             
         # compute tours for model
-        with torch.autocast(device_type=device.type, enabled=args.fp16):
+        with torch.cuda.amp.autocast(enabled=args.fp16):
             tour_train, sumLogProbOfActions = model_train(x, deterministic=False) # size(tour_train)=(bsz, nb_nodes), size(sumLogProbOfActions)=(bsz)
       
             # compute tours for baseline
