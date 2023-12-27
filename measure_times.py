@@ -41,14 +41,16 @@ def main(args):
     model = get_model(args, is_train=True).to(device)
     model_baseline = get_model(args, is_train=True).to(device)
     oz = torch.optim.Adam(model.parameters(), lr=1e-4)
-    t_time_s = time.time()
-    if args.train_bsz is None:
-        raise NotImplementedError()
-        model(data_10k, deterministic=False)
-    else:
-        assert 10_000 % args.train_bsz == 0
-        for i in tqdm(range(0, 10_000, args.train_bsz)):
-            minibatch = data_10k[i:i+args.train_bsz]
+    if args.train_bsz is not None:
+        nb_batch_train = 10_000 // args.train_bsz
+        if not 10_000 % args.train_bsz == 0:
+            nb_batch_train += 1
+        t_time_s = time.time()
+        # assert 10_000 % args.train_bsz == 0
+
+        # for i in tqdm(range(0, 10_000, args.train_bsz)):
+        for i in tqdm(range(nb_batch_train)):
+            minibatch = data_10k[i*args.train_bsz:(i+1)*args.train_bsz]
             tour, slp = model(minibatch, deterministic=False)
             with torch.no_grad():
                 tour_b, _ = model_baseline(minibatch, deterministic=False)
@@ -57,13 +59,13 @@ def main(args):
             oz.zero_grad()
             loss.backward()
             oz.step()
-    t_time = time.time() - t_time_s
-    result_dict['T-Time (total)'] = t_time
-    print('T-Time (total):', t_time)
-    t_time = t_time / 10_000 if args.train_bsz is not None else t_time
-    result_dict['T-Time (per instance)'] = t_time
-    print('T-Time (per instance):', t_time)
-    torch.cuda.empty_cache()
+        t_time = time.time() - t_time_s
+        result_dict['T-Time (total)'] = t_time
+        print('T-Time (total):', t_time)
+        t_time = t_time / 10_000 if args.train_bsz is not None else t_time
+        result_dict['T-Time (per instance)'] = t_time
+        print('T-Time (per instance):', t_time)
+        torch.cuda.empty_cache()
 
     # Measure Memory Usage
     # nvidia_smi.nvmlInit()
@@ -79,10 +81,15 @@ def main(args):
     model_infer.eval()
     with torch.no_grad():
         if args.greedy_bsz is not None:
+            nb_batch_eval_greedy = 10_000 // args.greedy_bsz
+            if not 10_000 // args.greedy_bsz == 0:
+                nb_batch_eval_greedy += 1
             i_time_s = time.time()
             # for i in tqdm(range(0, args.nb_instances_eval, args.greedy_bsz)):
-            for i in tqdm(range(0, 10_000, args.greedy_bsz)):
-                minibatch = data_10k[i:i+args.greedy_bsz]
+            # for i in tqdm(range(0, 10_000, args.greedy_bsz)):
+
+            for i in tqdm(range(nb_batch_eval_greedy)):
+                minibatch = data_10k[i*args.greedy_bsz:(i+1)*args.greedy_bsz]
                 model_infer(minibatch, greedy=True, beamsearch=False, B=1)
             i_time_g = time.time() - i_time_s
             result_dict['I-Time Greedy (total)'] = i_time_g
@@ -95,9 +102,15 @@ def main(args):
     
         # Measure I Time Beamsearch
         if args.beamsearch_bsz is not None:
+            nb_batch_eval_beamsearch = 10_000 // args.beamsearch_bsz
+            if not 10_000 // args.beamsearch_bsz == 0:
+                nb_batch_eval_beamsearch += 1
             i_time_s = time.time()
-            for i in tqdm(range(0, args.nb_instances_eval, args.beamsearch_bsz)):
-                minibatch = data_10k[i:i+args.beamsearch_bsz]
+            # for i in tqdm(range(0, args.nb_instances_eval, args.beamsearch_bsz)):
+            for i in tqdm(range(nb_batch_eval_beamsearch)):
+                if i == args.nb_instances_eval:
+                    break
+                minibatch = data_10k[i*args.beamsearch_bsz:(i+1)*args.beamsearch_bsz]
                 model_infer(minibatch, greedy=False, beamsearch=True, B=2500)
             i_time_bs = time.time() - i_time_s
             result_dict['I-Time Beamsearch (total)'] = i_time_bs
