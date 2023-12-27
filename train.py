@@ -269,7 +269,7 @@ for epoch in range(0,args.nb_epochs):
         # generate a batch of random tsp instances   
         x = torch.rand(args.bsz, args.nb_nodes, args.dim_input_nodes, device=device)
 
-        with torch.amp.autocast(device_type=device.type, enabled=args.fp16):
+        with torch.cuda.amp.autocast(enabled=args.fp16):
             # compute tour for model and baseline
             with torch.no_grad():
                 tour_train, _ = model_train(x, deterministic=True)
@@ -293,7 +293,7 @@ for epoch in range(0,args.nb_epochs):
 
     # Compute TSPs for small test set
     # Note : this can be removed
-    with torch.amp.autocast(device_type=device.type, enabled=args.fp16):
+    with torch.cuda.amp.autocast(enabled=args.fp16):
         with torch.no_grad():
             tour_baseline, _ = model_baseline(x_1000tsp, deterministic=True)
         mean_tour_length_test = compute_tour_length(x_1000tsp, tour_baseline).mean().item()
