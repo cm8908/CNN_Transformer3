@@ -69,6 +69,8 @@ parser.add_argument('--max_len_PE', type=int, default=1000)
 
 parser.add_argument('--fp16', action='store_true', default=False)
 args = parser.parse_args()
+if args.fp16:
+    raise NotImplementedError('fp16 not implemented')
 if args.embedding == 'conv':
     assert not args.nb_neighbors is None
     assert not args.kernel_size is None
@@ -159,7 +161,7 @@ if torch.cuda.device_count()>1:
 # uncomment these lines if trained with multiple GPUs
 
 if args.fp16:
-    scaler = torch.amp.GradScaler()
+    scaler = torch.cuda.amp.GradScaler()
 optimizer = torch.optim.Adam( model_train.parameters() , lr = args.lr ) 
 
 model_train = model_train.to(device)
@@ -237,12 +239,12 @@ for epoch in range(0,args.nb_epochs):
             with torch.no_grad():
                 tour_baseline, _ = model_baseline(x, deterministic=True)
 
-            # get the lengths of the tours
-            L_train = compute_tour_length(x, tour_train) # size(L_train)=(bsz)
-            L_baseline = compute_tour_length(x, tour_baseline) # size(L_baseline)=(bsz)
+        # get the lengths of the tours
+        L_train = compute_tour_length(x, tour_train) # size(L_train)=(bsz)
+        L_baseline = compute_tour_length(x, tour_baseline) # size(L_baseline)=(bsz)
         
-            # backprop
-            loss = torch.mean( (L_train - L_baseline)* sumLogProbOfActions )
+        # backprop
+        loss = torch.mean( (L_train - L_baseline)* sumLogProbOfActions )
         optimizer.zero_grad()
         if args.fp16:
             scaler.scale(loss).backward()
