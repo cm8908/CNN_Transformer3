@@ -170,8 +170,8 @@ if args.nb_nodes == 200:
     x_10k = torch.load('data/10k_TSP200.pt').to(device)
     x_10k_len = torch.load('data/10k_TSP200_len.pt').to(device)
     L_concorde = x_10k_len.mean().item()
-    args.bsz = 1
-    args.nb_batch_eval = 1_000 // args.bsz
+    args.bsz = 10
+    args.nb_batch_eval = 10_000 // args.bsz
     # B = 2500
 assert 10_000 % args.bsz == 0
 nb_TSPs = args.nb_batch_eval* args.bsz
