@@ -33,7 +33,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 ###################
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-n', '--nb_nodes', type=int, choices=[20, 50, 100], default=20)#required=True)
+parser.add_argument('-n', '--nb_nodes', type=int, choices=[20, 50, 100, 150, 200], default=20)#required=True)
 parser.add_argument('--embedding', type=str, choices=['linear', 'conv_same_padding', 'conv', 'conv2'], required=True)
 parser.add_argument('--nb_neighbors', type=int, default=None)
 parser.add_argument('--kernel_size', type=int, default=None)
@@ -166,11 +166,11 @@ if args.nb_nodes == 100:
     args.nb_batch_eval = 10_000 // args.bsz
     # B = 2500
 if args.nb_nodes == 200:
-    raise NotImplementedError()
+    # raise NotImplementedError()
     x_10k = torch.load('data/10k_TSP200.pt').to(device)
     x_10k_len = torch.load('data/10k_TSP200_len.pt').to(device)
     L_concorde = x_10k_len.mean().item()
-    args.bsz = 100
+    args.bsz = 1
     args.nb_batch_eval = 1_000 // args.bsz
     # B = 2500
 assert 10_000 % args.bsz == 0
