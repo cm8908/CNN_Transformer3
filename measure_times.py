@@ -1,6 +1,7 @@
 import os
 import torch
 import time
+from timeit import timeit
 # import nvidia_smi
 import pandas as pd
 from tqdm import tqdm
@@ -23,6 +24,28 @@ def get_model(args, is_train=False):
     batchnorm = True
     return TSP_net(embedding, nb_neighbors, kernel_size, dim_input_nodes=2, dim_emb=128, dim_ff=512,
                    nb_layers_encoder=6, nb_layers_decoder=2, nb_heads=8, max_len_PE=1000, segm_len=segm_len, batchnorm=batchnorm)
+
+def forward_backward_pass(model, model_baseline, data, optimizer, args, nb_batch):
+    for i in tqdm(range(nb_batch)):
+        minibatch = data[i*args.train_bsz:(i+1)*args.train_bsz]
+        tour, slp = model(minibatch, deterministic=False)
+        with torch.no_grad():
+            tour_b, _ = model_baseline(minibatch, deterministic=False)
+        L_train, L_baseline = compute_tour_length(minibatch, tour), compute_tour_length(minibatch, tour_b)
+        loss = ((L_train - L_baseline) * slp).mean()
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+def forward_greedy(model, data, args, nb_batch):
+    for i in tqdm(range(nb_batch)):
+        minibatch = data[i*args.greedy_bsz:(i+1)*args.greedy_bsz]
+        model(minibatch, greedy=True, beamsearch=False, B=1)
+def forward_beamsearch(model, data, args, nb_batch):
+    for i in tqdm(range(nb_batch)):
+        minibatch = data[i*args.beamsearch_bsz:(i+1)*args.beamsearch_bsz]
+        model(minibatch, greedy=False, beamsearch=True, B=2500)
+
 def main(args):
     result_dict = {}
     
@@ -40,26 +63,16 @@ def main(args):
     # Get Train Model and Measure T-Time
     model = get_model(args, is_train=True).to(device)
     model_baseline = get_model(args, is_train=True).to(device)
+    model.train()
+    model_baseline.eval()
     oz = torch.optim.Adam(model.parameters(), lr=1e-4)
     if args.train_bsz is not None:
+        print('> Train')
         nb_batch_train = 10_000 // args.train_bsz
         if not 10_000 % args.train_bsz == 0:
-            nb_batch_train += 1
-        t_time_s = time.time()
-        # assert 10_000 % args.train_bsz == 0
-
-        # for i in tqdm(range(0, 10_000, args.train_bsz)):
-        for i in tqdm(range(nb_batch_train)):
-            minibatch = data_10k[i*args.train_bsz:(i+1)*args.train_bsz]
-            tour, slp = model(minibatch, deterministic=False)
-            with torch.no_grad():
-                tour_b, _ = model_baseline(minibatch, deterministic=False)
-            L_train, L_baseline = compute_tour_length(minibatch, tour), compute_tour_length(minibatch, tour_b)
-            loss = ((L_train - L_baseline) * slp).mean()
-            oz.zero_grad()
-            loss.backward()
-            oz.step()
-        t_time = time.time() - t_time_s
+            nb_batch_train += 1 
+        t_time = timeit(lambda: forward_backward_pass(model, model_baseline, data_10k, oz, args, nb_batch_train), number=args.nb_iter)
+        t_time /= args.nb_iter
         result_dict['T-Time (total)'] = t_time
         print('T-Time (total):', t_time)
         t_time = t_time / 10_000 if args.train_bsz is not None else t_time
@@ -81,38 +94,28 @@ def main(args):
     model_infer.eval()
     with torch.no_grad():
         if args.greedy_bsz is not None:
-            nb_batch_eval_greedy = 10_000 // args.greedy_bsz
-            if not 10_000 // args.greedy_bsz == 0:
+            print('> Greedy')
+            nb_batch_eval_greedy = args.nb_instances_eval // args.greedy_bsz
+            if not args.nb_instances_eval % args.greedy_bsz == 0:
                 nb_batch_eval_greedy += 1
-            i_time_s = time.time()
-            # for i in tqdm(range(0, args.nb_instances_eval, args.greedy_bsz)):
-            # for i in tqdm(range(0, 10_000, args.greedy_bsz)):
-
-            for i in tqdm(range(nb_batch_eval_greedy)):
-                minibatch = data_10k[i*args.greedy_bsz:(i+1)*args.greedy_bsz]
-                model_infer(minibatch, greedy=True, beamsearch=False, B=1)
-            i_time_g = time.time() - i_time_s
+            i_time_g = timeit(lambda: forward_greedy(model_infer, data_10k, args, nb_batch_eval_greedy), number=args.nb_iter)
+            i_time_g /= args.nb_iter
             result_dict['I-Time Greedy (total)'] = i_time_g
             print('I-Time Greedy (total):', i_time_g)
             # i_time_g /= args.nb_instances_eval
-            i_time_g /= 10_000
+            i_time_g /= args.nb_instances_eval
             result_dict['I-Time Greedy (per instance)'] = i_time_g
             print('I-Time Greedy (per instance):', i_time_g)
             torch.cuda.empty_cache()
     
         # Measure I Time Beamsearch
         if args.beamsearch_bsz is not None:
-            nb_batch_eval_beamsearch = 10_000 // args.beamsearch_bsz
-            if not 10_000 // args.beamsearch_bsz == 0:
+            print('> Beamsearch')
+            nb_batch_eval_beamsearch = args.nb_instances_eval // args.beamsearch_bsz
+            if not args.nb_instances_eval % args.beamsearch_bsz == 0:
                 nb_batch_eval_beamsearch += 1
-            i_time_s = time.time()
-            # for i in tqdm(range(0, args.nb_instances_eval, args.beamsearch_bsz)):
-            for i in tqdm(range(nb_batch_eval_beamsearch)):
-                if i == args.nb_instances_eval:
-                    break
-                minibatch = data_10k[i*args.beamsearch_bsz:(i+1)*args.beamsearch_bsz]
-                model_infer(minibatch, greedy=False, beamsearch=True, B=2500)
-            i_time_bs = time.time() - i_time_s
+            i_time_bs = timeit(lambda: forward_beamsearch(model_infer, data_10k, args, nb_batch_eval_beamsearch), number=args.nb_iter)
+            i_time_bs /= args.nb_iter
             result_dict['I-Time Beamsearch (total)'] = i_time_bs
             print('I-Time Beamsearch (total):', i_time_bs)
             i_time_bs /= args.nb_instances_eval
@@ -142,6 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('--greedy_bsz', type=int, default=None)
     parser.add_argument('--beamsearch_bsz', type=int, default=None)
     parser.add_argument('--nb_instances_eval', type=int, default=10_000)
+    parser.add_argument('--nb_iter', default=10, type=int)
     args = parser.parse_args()
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_id)
     main(args)

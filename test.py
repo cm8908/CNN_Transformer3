@@ -165,6 +165,12 @@ if args.nb_nodes == 100:
     args.bsz = 5
     args.nb_batch_eval = 10_000 // args.bsz
     # B = 2500
+if args.nb_nodes == 150:
+    x_10k = torch.load('data/10k_TSP150.pt').to(device).float()
+    x_10k_len = torch.load('data/10k_TSP150_len.pt').to(device)
+    L_concorde = x_10k_len.mean().item()
+    args.bsz = 10
+    args.nb_batch_eval = 10_000 // args.bsz
 if args.nb_nodes == 200:
     # raise NotImplementedError()
     x_10k = torch.load('data/10k_TSP200.pt').to(device)
