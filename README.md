@@ -2,6 +2,8 @@
 Code for paper: [A Lightweight CNN-Transformer Model for Learning Traveling Salesman Problems](https://arxiv.org/abs/2305.01883)
 
 # Runs (Examples)
+(Updated) Now you can use docker to train & test our model withour installing all the dependencies by running: ```docker run -it fmsjung/lit-cnn-trnsf-tsp```
+
 To train the proposed model on TSP20, run the following:
 ```console
 $ train.py --exp_name Experiment-Name -n 20 --bsz 512 --gpu_id 0 --embedding conv --nb_neighbors 10 --kernel_size 11 --segm_len 5 --batchnorm

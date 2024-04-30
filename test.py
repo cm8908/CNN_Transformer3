@@ -171,6 +171,7 @@ assert 10_000 % args.bsz == 0
 nb_TSPs = args.nb_batch_eval* args.bsz
 
 
+os.makedirs('test_res', exist_ok=True)
 file_name = f"test_res/{args.exp_tag}.txt"
 file = open(file_name,"a",1) 
 file.write('\n'.join([f'{k}:{v}' for k, v in vars(args).items()])+'\n\n')
