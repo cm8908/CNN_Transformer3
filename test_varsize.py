@@ -8,13 +8,10 @@ import time
 from argparse import ArgumentParser
 
 import os
-import datetime
 
 from model_search import TSP_net
 from utils import compute_tour_length, AverageMeter
-# visualization 
-import numpy as np
-import pandas as pd
+
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 

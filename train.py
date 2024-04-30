@@ -16,18 +16,6 @@ import datetime
 from model import TSP_net
 from utils import compute_tour_length
 
-# visualization 
-from IPython.display import set_matplotlib_formats, clear_output
-set_matplotlib_formats('png2x','pdf')
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-try: 
-    import networkx as nx
-    from scipy.spatial.distance import pdist, squareform
-    from concorde.tsp import TSPSolver # !pip install -e pyconcorde
-except:
-    pass
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 

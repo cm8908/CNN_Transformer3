@@ -1,9 +1,6 @@
 import os
 import torch
-import time
 from timeit import timeit
-# import nvidia_smi
-import pandas as pd
 from tqdm import tqdm
 from argparse import ArgumentParser
 from utils import compute_tour_length
