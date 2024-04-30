@@ -15,6 +15,7 @@ import datetime
 
 from model import TSP_net
 from utils import compute_tour_length
+from tqdm import tqdm
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -201,7 +202,7 @@ if args.resume_training:
 ###################
 start_training_time = time.time()
 
-for epoch in range(0,args.nb_epochs):
+for epoch in tqdm(range(0,args.nb_epochs), 'Training'):
     
     # re-start training with saved checkpoint
     epoch += epoch_ckpt
