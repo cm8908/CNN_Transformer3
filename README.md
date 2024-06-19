@@ -34,7 +34,7 @@ The codes here are based on the work of Xavier Bresson's [TSP Transformer](https
 
 ```
 
-@article{cite-key,
+@article{jung2024lightweight,
 	author = {Jung, Minseop and Lee, Jaeseung and Kim, Jibum},
 	date = {2024/06/19}
 	doi = {10.1007/s10489-024-05603-x},
