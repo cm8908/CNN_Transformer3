@@ -1,5 +1,5 @@
 # CNN_Transformer
-Code for paper: [A Lightweight CNN-Transformer Model for Learning Traveling Salesman Problems](https://arxiv.org/abs/2305.01883)
+Code for paper: [A Lightweight CNN-Transformer Model for Learning Traveling Salesman Problems](https://link.springer.com/article/10.1007/s10489-024-05603-x)
 
 # Runs (Examples)
 (Updated 04-30-2024) Now you can use [Docker](https://hub.docker.com/r/fmsjung/lit-cnn-trnsf-tsp) to train & test our model withour installing all the dependencies by running: ```docker run -it --gpus all --rm fmsjung/lit-cnn-trnsf-tsp```
