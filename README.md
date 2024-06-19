@@ -33,12 +33,15 @@ The codes here are based on the work of Xavier Bresson's [TSP Transformer](https
 # Cite
 
 ```
-@article{jung2023lightweight,
-  title={A Lightweight CNN-Transformer Model for Learning Traveling Salesman Problems},
-  author={Jung, Minseop and Lee, Jaeseung and Kim, Jibum},
-      year={2023},
-      eprint={2305.01883},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
-}
+
+@article{cite-key,
+	author = {Jung, Minseop and Lee, Jaeseung and Kim, Jibum},
+	date = {2024/06/19}
+	doi = {10.1007/s10489-024-05603-x},
+	id = {Jung2024},
+	isbn = {1573-7497},
+	journal = {Applied Intelligence},
+	title = {A lightweight CNN-transformer model for learning traveling salesman problems},
+	year = {2024}
+
 ```
